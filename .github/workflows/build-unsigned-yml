@@ -1,0 +1,56 @@
+name: Build Stoat iOS (Unsigned Release)
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: macos-latest
+    permissions:
+      contents: write   # REQUIRED for releases
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Build archive (no signing)
+        run: |
+          xcodebuild \
+            -workspace Stoat.xcworkspace \
+            -scheme Stoat \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath build/Stoat.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            clean archive
+
+      - name: Export unsigned IPA
+        run: |
+          mkdir -p export
+          xcodebuild \
+            -exportArchive \
+            -archivePath build/Stoat.xcarchive \
+            -exportPath export \
+            -exportOptionsPlist ExportOptions.plist \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Rename IPA
+        run: |
+          mv export/*.ipa stoat-ios-unsigned.ipa
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Stoat iOS ${{ github.ref_name }} (unsigned)
+          tag_name: ${{ github.ref_name }}
+          files: stoat-ios-unsigned.ipa
+          draft: false
+          prerelease: true
