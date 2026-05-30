@@ -22,7 +22,7 @@ jobs:
       - name: Build archive (no signing)
         run: |
           xcodebuild \
-            -workspace Stoat.xcworkspace \
+            -project Stoat.xcodeproj \
             -scheme Stoat \
             -configuration Release \
             -sdk iphoneos \
